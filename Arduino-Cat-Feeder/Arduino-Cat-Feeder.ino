@@ -7,7 +7,7 @@
 #define POWER_BUTTON    13
 #define BUZZER          3
 #define SERVO           5
-#define DEFAULT_SPEED   95
+#define DEFAULT_SPEED   95                // Servo offset = 5
 
 unsigned long timeLeftHours = 1;
 unsigned long prevTimeLeftHours;
@@ -23,10 +23,10 @@ int lastUpButtonState = LOW;
 unsigned long lastPowerDebounceTime = 0;
 unsigned long lastDownDebounceTime = 0;
 unsigned long lastUpDebounceTime = 0;
-unsigned long debounceDelay = 50;
+unsigned long debounceDelay = 50;         // Delay (in milliseconds) before allowing another button press       
 
 Servo servo;
-LiquidCrystal_I2C LCD(0x27, 16, 2); // set the LCD address to 0x27 for a 16 chars and 2 line display
+LiquidCrystal_I2C LCD(0x27, 16, 2);       // Set the LCD address to 0x27 (16 characters, 2 lines)
 
 void setup() {
   pinMode(POWER_BUTTON, INPUT);
