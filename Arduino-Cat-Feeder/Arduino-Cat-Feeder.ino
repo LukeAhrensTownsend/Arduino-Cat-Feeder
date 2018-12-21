@@ -66,12 +66,13 @@ int checkButton(int button) {
 
           if (powerButtonState == HIGH) {
             if (!timerOn) {
-              timerDurationMillis = timeLeftHours * 60 * 1000;       // Add "* 60"
+              timerDurationMillis = timeLeftHours * 60 * 60 * 1000;
               timerOn = true;
             } else {
               displayOpeningDoor();
               openDoor();
               timerOn = false;
+              displayTime(timeLeftHours);
             }
           }
         }
@@ -126,7 +127,7 @@ void runTimer() {
   unsigned long currentMillis = millis();
 
   if ((currentMillis - previousMillis) <= timerDurationMillis) { 
-    timeLeftHours = ((((timerDurationMillis - (currentMillis - previousMillis)) / 1000) / 60)) + 1;     // Add "/ 60"
+    timeLeftHours = ((((timerDurationMillis - (currentMillis - previousMillis)) / 1000) / 60) / 60) + 1;
   } else {
     displayDone();
     playSound();
@@ -145,7 +146,7 @@ void displayTime(int time) {
   LCD.clear();
   
   if (timerOn) {  
-    LCD.setCursor(1,0);  
+    LCD.setCursor(0,0);  
     LCD.print("Timer running...");
     LCD.setCursor(0,1);
     LCD.print("Time left: ");
@@ -171,8 +172,8 @@ void displayDone() {
   LCD.setCursor(2, 0);   
   LCD.print("OPENING DOOR");
   
-  LCD.setCursor(0,1);
-  LCD.print("Food, Toulouse!");
+  LCD.setCursor(1,1);
+  LCD.print("Fat Cat Time!");
 }
 
 void displayClosingDoor() {
@@ -202,7 +203,7 @@ void playSound() {
 }
 
 void openDoor() {
-  servo.write(0);
+  servo.write(5);
   delay(5000);
   servo.write(DEFAULT_SPEED);
 }
