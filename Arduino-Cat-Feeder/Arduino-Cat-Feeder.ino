@@ -5,22 +5,28 @@
 #define DOWN_BUTTON     8
 #define UP_BUTTON       12
 #define POWER_BUTTON    13
+#define MODE_BUTTON     7
 #define BUZZER          3
-#define SERVO           5
+#define SERVO           10
 #define DEFAULT_SPEED   95                // Servo offset = 5
 
 unsigned long timeLeftHours = 1;
+unsigned long intervalHours = 1;
 unsigned long prevTimeLeftHours;
 unsigned long timerDurationMillis;
 unsigned long previousMillis;
 int timerOn = false;
+int mode = 1;
 int powerButtonState;
+int modeButtonState;
 int downButtonState;
 int upButtonState;
 int lastPowerButtonState = LOW;
+int lastModeButtonState = LOW;
 int lastDownButtonState = LOW;
 int lastUpButtonState = LOW;
 unsigned long lastPowerDebounceTime = 0;
+unsigned long lastModeDebounceTime = 0;
 unsigned long lastDownDebounceTime = 0;
 unsigned long lastUpDebounceTime = 0;
 unsigned long debounceDelay = 50;         // Delay (in milliseconds) before allowing another button press       
@@ -30,6 +36,7 @@ LiquidCrystal_I2C LCD(0x27, 16, 2);       // Set the LCD address to 0x27 (16 cha
 
 void setup() {
   pinMode(POWER_BUTTON, INPUT);
+  pinMode(MODE_BUTTON, INPUT);
   pinMode(DOWN_BUTTON, INPUT);
   pinMode(UP_BUTTON, INPUT); 
   pinMode(BUZZER, OUTPUT);
@@ -47,6 +54,7 @@ void loop() {
   if (timerOn) {
     runTimer();
   } else {
+    checkButton(MODE_BUTTON);
     checkButton(DOWN_BUTTON);
     checkButton(UP_BUTTON);
   }
@@ -66,12 +74,16 @@ int checkButton(int button) {
 
           if (powerButtonState == HIGH) {
             if (!timerOn) {
+              intervalHours = timeLeftHours;
               timerDurationMillis = timeLeftHours * 60 * 60 * 1000;
               timerOn = true;
+              displayTime(timeLeftHours);
             } else {
-              displayOpeningDoor();
-              openDoor();
+              if (mode == 3)
+                dispenseFood();
+
               timerOn = false;
+              timeLeftHours = 1;
               displayTime(timeLeftHours);
             }
           }
@@ -79,6 +91,28 @@ int checkButton(int button) {
       }
 
       lastPowerButtonState = reading;
+      break;
+
+    case MODE_BUTTON:
+      if (reading != lastModeButtonState)
+        lastModeDebounceTime = millis();
+
+      if ((millis() - lastModeDebounceTime) > debounceDelay) {
+        if (reading != modeButtonState) {
+          modeButtonState = reading;
+
+          if (modeButtonState == HIGH) {
+            if (!timerOn) {
+              if (mode == 3) mode = 0;
+              mode++;
+              
+              displayTime(timeLeftHours);
+            }
+          }
+        }
+      }
+
+      lastModeButtonState = reading;   
       break;
       
     case DOWN_BUTTON:
@@ -129,10 +163,16 @@ void runTimer() {
   if ((currentMillis - previousMillis) <= timerDurationMillis) { 
     timeLeftHours = ((((timerDurationMillis - (currentMillis - previousMillis)) / 1000) / 60) / 60) + 1;
   } else {
-    displayDone();
     playSound();
-    openDoor();
-    timerOn = false;
+    dispenseFood();
+    if (mode == 2) {
+      timeLeftHours = intervalHours;
+      timerDurationMillis = timeLeftHours * 60 * 60 * 1000;
+    } else {
+      timerOn = false;
+      timeLeftHours = 1;
+    }
+    
     displayTime(timeLeftHours);
   }
 
@@ -147,12 +187,14 @@ void displayTime(int time) {
   
   if (timerOn) {  
     LCD.setCursor(0,0);  
-    LCD.print("Timer running...");
+    LCD.print("Timer:ON  Mode:");
+    LCD.print(mode);
     LCD.setCursor(0,1);
     LCD.print("Time left: ");
   } else {
-    LCD.setCursor(3,0);
-    LCD.print("Timer OFF");
+    LCD.setCursor(0,0);
+    LCD.print("Timer:OFF Mode:");
+    LCD.print(mode);
     LCD.setCursor(0,1);
     LCD.print("Set timer: ");
   }
@@ -166,31 +208,23 @@ void displayTime(int time) {
   }
 }
 
-void displayDone() {
-  LCD.clear();
+void dispenseFood() {
+  displayDispensingFood();
   
-  LCD.setCursor(2, 0);   
-  LCD.print("OPENING DOOR");
-  
-  LCD.setCursor(1,1);
-  LCD.print("Fat Cat Time!");
+  servo.write(185);
+  delay(750);
+  servo.write(DEFAULT_SPEED);
+  delay(200);
+  servo.write(5);
+  delay(755);
+  servo.write(DEFAULT_SPEED);
 }
 
-void displayClosingDoor() {
+void displayDispensingFood() {
   LCD.clear();
   
-  LCD.setCursor(2, 0);
-  LCD.print("CLOSING DOOR");
-  
-  LCD.setCursor(1, 1);
-  LCD.print("Please wait...");
-}
-
-void displayOpeningDoor() {
-  LCD.clear();
-  
-  LCD.setCursor(2, 0);
-  LCD.print("OPENING DOOR");
+  LCD.setCursor(0, 0);
+  LCD.print("DISPENSING FOOD");
   
   LCD.setCursor(1, 1);
   LCD.print("Please wait...");
@@ -200,16 +234,4 @@ void playSound() {
   tone(BUZZER, 500);
   delay(4000);
   noTone(BUZZER);
-}
-
-void openDoor() {
-  servo.write(5);
-  delay(5000);
-  servo.write(DEFAULT_SPEED);
-}
-
-void closeDoor() {
-  servo.write(185);
-  delay(5000);
-  servo.write(DEFAULT_SPEED);
 }
