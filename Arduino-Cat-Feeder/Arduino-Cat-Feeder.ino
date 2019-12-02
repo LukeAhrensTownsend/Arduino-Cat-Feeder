@@ -14,7 +14,7 @@ unsigned long timeLeftHours = 1;
 unsigned long intervalHours = 1;
 unsigned long prevTimeLeftHours;
 unsigned long timerDurationMillis;
-unsigned long previousMillis;
+unsigned long previousMillis = 0;
 int timerOn = false;
 int mode = 1;
 int powerButtonState;
@@ -163,6 +163,7 @@ void runTimer() {
   if ((currentMillis - previousMillis) <= timerDurationMillis) { 
     timeLeftHours = ((((timerDurationMillis - (currentMillis - previousMillis)) / 1000) / 60) / 60) + 1;
   } else {
+    previousMillis = currentMillis;
     playSound();
     dispenseFood();
     if (mode == 2) {
@@ -190,7 +191,7 @@ void displayTime(int time) {
     LCD.print("Timer:ON  Mode:");
     LCD.print(mode);
     LCD.setCursor(0,1);
-    LCD.print("Time left: ");
+    LCD.print("Time left:<");
   } else {
     LCD.setCursor(0,0);
     LCD.print("Timer:OFF Mode:");
@@ -210,13 +211,10 @@ void displayTime(int time) {
 
 void dispenseFood() {
   displayDispensingFood();
+  playSound();
   
-  servo.write(185);
-  delay(750);
-  servo.write(DEFAULT_SPEED);
-  delay(200);
-  servo.write(5);
-  delay(755);
+  servo.write(105);
+  delay(5325);
   servo.write(DEFAULT_SPEED);
 }
 
@@ -231,7 +229,23 @@ void displayDispensingFood() {
 }
 
 void playSound() {
-  tone(BUZZER, 500);
-  delay(4000);
+  tone(BUZZER, 950);
+  delay(800);
+  tone(BUZZER, 750);
+  delay(800);
+  tone(BUZZER, 850);
+  delay(800);
+  tone(BUZZER, 550);
+  delay(1000);
+  noTone(BUZZER);
+  delay(500);
+  tone(BUZZER, 550);
+  delay(800);
+  tone(BUZZER, 850);
+  delay(800);
+  tone(BUZZER, 950);
+  delay(800);
+  tone(BUZZER, 750);
+  delay(1000);
   noTone(BUZZER);
 }
